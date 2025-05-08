@@ -1,6 +1,6 @@
 process NANOPLOT_READS {
-    publishDir "${params.outdir}/quality-control-${sample}/${step}/", mode: 'copy', overwrite: true
-    conda 'bioconda::nanoplot'
+    publishDir "${params.outdir}/${sample}/quality-control/${step}/", mode: 'copy', overwrite: true
+    conda 'bioconda::nanoplot=1.44.1'
     container 'quay.io/biocontainers/nanoplot:1.44.1--pyhdfd78af_0'
 
     input:
@@ -15,14 +15,14 @@ process NANOPLOT_READS {
 
     script:
     """
-    NanoPlot --fastq ${reads} -f png
+    NanoPlot --fastq ${reads} -f png -t ${task.cpus}
     """
 
 }
 
 process NANOPLOT_BAM {
-    publishDir "${params.outdir}/quality-control-${sample}/${step}/", mode: 'copy', overwrite: true
-    conda 'bioconda::nanoplot'
+    publishDir "${params.outdir}/${sample}/quality-control/${step}/", mode: 'copy', overwrite: true
+    conda 'bioconda::nanoplot=1.44.1'
     container 'quay.io/biocontainers/nanoplot:1.44.1--pyhdfd78af_0'
 
     input:

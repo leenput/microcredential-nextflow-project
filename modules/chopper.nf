@@ -1,6 +1,6 @@
 process CHOPPER {
-    publishDir "${params.outdir}/filtered_reads-${sample}/", mode: 'copy', overwrite: true
-    conda 'bioconda::chopper'
+    publishDir "${params.outdir}/${sample}/filtered_reads/", mode: 'copy', overwrite: true
+    conda 'bioconda::chopper=0.10.0'
     container 'quay.io/biocontainers/chopper:0.10.0--hcdda2d0_0'
 
     input:

@@ -32,7 +32,6 @@ I will develop a nextflow pipeline for preprocessing human genome sequencing dat
 - [Chopper][https://github.com/wdecoster/chopper]
 - [Minimap2][https://github.com/lh3/minimap2]
 - [Samtools][https://www.htslib.org/]
-- [Mosdepth][https://github.com/brentp/mosdepth]
 - custom bash script 
 
 ### Input data 
@@ -71,29 +70,61 @@ mkdir modules
 
 ### 1. QC module - nanoplot
 Find appropriate **conda enviroments/containers**.
-- conda: https://anaconda.org/bioconda/nanoplot
+- conda: https://anaconda.org/bioconda/nanoplot=1.44.1
 - container: I find a recent one on quai.io biocontainers: quay.io/biocontainers/nanoplot:1.44.1--pyhdfd78af_0
 
-**Define inputs**: the tool takes raw/filtered fastq or ubam files (with --fastq flag) or sorted and mapped bam files (with --bam). 
+\n**Define inputs**: the tool takes raw/filtered fastq or ubam files (with --fastq flag) or sorted and mapped bam files (with --bam). 
 Therefore, we need to define two seperate processes, one for read QC and one for mapping QC. 
 In main.nf we need to include the nanoplot.nf module for NANOPLOT_RAW process as QC_RAW, QC_FILT to use it twice, and the NANOPLOT_BAM for read alignment QC 
 
-As module input: tuple of sample name and reads and a step value
+\nAs module input: tuple of sample name and reads and a step value
 -> match this in main.nf by defining appropriate channel that is shaped like a tuple with three elements (sample, reads-filepath, step)
 -> we can use the *map operator* for this
 
-**Define outputs**: the tool generates a bunch of different file formats (html, png, txt, log), so we should specify and emit them in the output section. 
+\n**Define outputs**: the tool generates a bunch of different file formats (html, png, txt, log), so we should specify and emit them in the output section. 
 
 ### 2. read processing module - chopper
 Find appropriate **conda enviroments/containers**.
-- conda: https://anaconda.org/bioconda/chopper
+- conda: https://anaconda.org/bioconda/chopper=0.10.0
 - container: quai.io biocontainers: quay.io/biocontainers/chopper:0.10.0--hcdda2d0_0
 
-**Define inputs**: the tool takes fastq reads as an input (--input), and optional filtering criteria. We will use the quality score (--quality) and length (--minlength) as filters
+\n**Define inputs**: the tool takes fastq reads as an input (--input), and optional filtering criteria. We will use the quality score (--quality) and length (--minlength) as filters
 As module input: tuple of sample name and reads, qscore value and length value
 --> match in main.nf by setting up value channels for qscore and length 
 --> feed chopper module with reads channel, qscore and length value channels
 
-**Define outputs**: The tool outputs a filtered fastq file, which we will emit, to then use as input for post-processing QC step and for alignment.
+\n**Define outputs**: The tool outputs a filtered fastq file, which we will emit, to then use as input for post-processing QC step and for alignment.
 
 ### 3. alignment module - minimap2
+Find appropriate **conda enviroments/containers**.
+- conda: https://anaconda.org/bioconda/minimap2=2.29
+- container: quay.io/biocontainers/minimap2:2.29--h577a1d6_0
+
+\n**Define inputs**: Minimap2 requires the filtered fastq reads and fasta reference as input files.
+- set up value channel (fromPath) for fasta reference file in main.nf
+- module input is tuple of sample and filtered reads, and path to fasta file.
+
+\n**Define outputs**: alignment file in SAM format. 
+- Specify in samtools module output as tuple of sample and SAM file path.
+- Connect in main.nf with chopper fastq output. 
+
+### 3a. alignment processing module - samtools
+Find appropriate **conda enviroments/containers**.
+- conda: https://anaconda.org/bioconda/samtools=1.21
+- container: quay.io/biocontainers/samtools:1.21--h96c455f_1
+
+\n**Define inputs**: we will use different function of samtools convert (samtools view), sort (samtools sort) and index (samtools index) the SAM aligment file. 
+- module input is tuple of sample and path to SAM file.
+- use module script section to pipe the different functions for efficiency. 
+
+\n**Define output**: two outputs: sorted bam file and index
+So module output is tuple of sample and the sorted BAM, which we will emit as 'bam'. Another output is the index (.bai) file, which we will not emit because not explicitely needed to call upon it in remainder of pipeline.
+
+\n**Modify main.nf**: Include samtools.nf module and connect emitted minimap2 output as process input. 
+
+### 3b. alignment evaluation 
+Using samtools depth, calculate per-position coverage. For this, we create a COVERAGE process in the samtools module file, that uses the sorted bam file as an input and generates a coverage.txt file. We also use Nanoplot again to calculate metrics of aligned reads.
+--> include COVERAGE process from samtools module and NANOPLOT_BAM process from nanoplot module in main.nf
+--> call upon the processes and connect data channels
+
+
