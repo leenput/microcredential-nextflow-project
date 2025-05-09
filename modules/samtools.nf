@@ -2,6 +2,7 @@ process SAMTOOLS {
     publishDir "${params.outdir}/${sample}/alignment/", mode: 'copy', overwrite: true
     conda 'bioconda::samtools=1.21'
     container 'quay.io/biocontainers/samtools:1.21--h96c455f_1'
+    label 'medium'
 
     input:
     tuple val(sample), path(sam)
@@ -23,6 +24,7 @@ process COVERAGE {
     publishDir "${params.outdir}/${sample}/alignment/", mode: 'copy', overwrite: true
     conda 'bioconda::samtools=1.21'
     container 'quay.io/biocontainers/samtools:1.21--h96c455f_1'
+    label 'medium'
 
     input:
     tuple val(sample), path(bam)

@@ -20,6 +20,7 @@ include { CHOPPER as CHOPPER } from './modules/chopper.nf'
 include { MINIMAP as MINIMAP } from './modules/minimap2.nf'
 include { SAMTOOLS as SAMTOOLS } from './modules/samtools.nf'
 include { COVERAGE as COVERAGE } from './modules/samtools.nf'
+include { QC_SUMMARY as QC_SUMMARY } from './modules/qc_summary.nf'
 
 /*
 
@@ -43,6 +44,12 @@ workflow {
            FILTERING THRESHOLDS
     Qscore          : ${params.qscore}
     Read length     : ${params.minlength}
+    ===================================
+           EVALUATION THRESHOLDS
+    Min % Passed    : ${params.pct_filtered}
+    Min % Mapped    : ${params.pct_mapped}
+    Min coverage    : ${params.coverage}
+    Min N50 length  : ${params.filt_n50}
     ===================================
     """
 
@@ -91,6 +98,32 @@ workflow {
     COVERAGE(SAMTOOLS.out.bam)
     QC_MAPPED(SAMTOOLS.out.bam, mapped_step)
 
+    // QC evaluation and recommendations 
+    // Each QC output emits: tuple(sample, path), so extract individual channels by mapping
+    def sample_ch   = QC_RAW.out.txt.map { it[0] }  // from any source — sample is the same
+    def raw_file    = QC_RAW.out.txt.map { it[1] }
+    def filt_file   = QC_FILT.out.txt.map { it[1] }
+    def mapped_file = QC_MAPPED.out.txt.map { it[1] }
+    def cov_file    = COVERAGE.out.coverage.map { it[1] }
+
+    // define channels for threshold parameters
+    def min_filtered = Channel.value(params.pct_filtered)
+    def min_mapped = Channel.value(params.pct_mapped)
+    def min_cov = Channel.value(params.coverage)
+    def min_n50 = Channel.value(params.filt_n50)
+
+
+    // Final call with 9 channels
+    QC_SUMMARY(sample_ch, raw_file, filt_file, mapped_file, cov_file, min_filtered, min_mapped, min_cov, min_n50)
+
+    // Quick inspection of outcome:
+    QC_SUMMARY.out.QC_EVAL
+    .map { sample, file ->
+        def status = file.readLines().last().tokenize('\t').last()
+        tuple(sample, status)
+    }
+    .collect()
+    .view()
 }
 
 /*
