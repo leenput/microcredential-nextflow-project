@@ -20,6 +20,7 @@ include { CHOPPER as CHOPPER } from './modules/chopper.nf'
 include { MINIMAP as MINIMAP } from './modules/minimap2.nf'
 include { SAMTOOLS as SAMTOOLS } from './modules/samtools.nf'
 include { COVERAGE as COVERAGE } from './modules/samtools.nf'
+//include { ALIGNMENT as ALIGNMENT } from '/workflows/alignment.nf'  did not work so far.
 include { QC_SUMMARY as QC_SUMMARY } from './modules/qc_summary.nf'
 
 /*
@@ -83,15 +84,14 @@ workflow {
     // QC on filtered reads
     QC_FILT(CHOPPER.out.filtered_fastq, filtered_step)
 
+    // read mapping and alignment using subworkflow
 
-    // read mapping
     def fasta_ch = Channel
              .fromPath(params.fasta)
 
     MINIMAP(fasta_ch, CHOPPER.out.filtered_fastq)
 
-    // Convert, sort and index alignment file
-    
+    // Run samtools on the SAM output to convert, sort and index alignment file
     SAMTOOLS(MINIMAP.out.sam)
 
     // QC of read mapping
