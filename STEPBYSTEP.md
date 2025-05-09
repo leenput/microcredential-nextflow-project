@@ -127,4 +127,44 @@ Using samtools depth, calculate per-position coverage. For this, we create a COV
 --> include COVERAGE process from samtools module and NANOPLOT_BAM process from nanoplot module in main.nf
 --> call upon the processes and connect data channels
 
+## Update GitHub with progress after end of day
+```
+git add *
+git commit -m "message that specified progress made during the day"
+git push
+```
+
+## Try out on VSC with singularity profile
+- STEP1: connect to UGent VSC 
+- STEP2: configure VSC for nextflow usage  
+
+```
+module load Nextflow/24.10.2
+export APPTAINER_CACHEDIR=${VSC_SCRATCH}/.apptainer_cache
+export APPTAINER_TMPDIR=${VSC_SCRATCH}/.apptainer_tmp
+```  
+
+- STEP3: clone github repository in $VSC_DATA
+
+```
+git clone git@github.com:leenput/microcredential-nextflow-project.git
+cd microcredential-nextflow-project
+```
+
+- STEP4: launch pipeline with apptainer profile 
+
+```
+nextflow run main.nf -profile apptainer 
+``` 
+
+Status: ✔
+
+## Try out with Docker profile
+- STEP1: open Docker Desktop to start the Docker engine
+- STEP2: launch pipeline with docker profile
+
+```
+nextflow run main.nf -profile docker
+```
+Status: ✔
 
