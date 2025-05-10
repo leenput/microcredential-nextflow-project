@@ -156,7 +156,7 @@ touch bin/qc_evaluation.sh
 - define all input channels, modify the nanopstat.txt output tuples to just represent the file using map operator
 - include thresholds in params.config 
 
-Finally, use operators to quickly inspect the QC evaluation summary table and print PASS / FAIL in stdout.
+Finally, use operators (.map, .last, .collect and .view) to quickly inspect the QC evaluation summary table and print PASS / FAIL in stdout.
 
 ## LABEL PROCESSES
 Based on pipeline timeline and report, label the processes with (low, medium, high) based on how much resources they use. 
