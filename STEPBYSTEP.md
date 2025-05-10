@@ -39,15 +39,19 @@ I will develop a nextflow pipeline for preprocessing human genome sequencing dat
 - Some fastq files as test data
 
 ## SETTING UP
-**STEP 1: Start local github repository where we will start building the nextflow pipeline**
+
+**STEP 1: Start local github repository where we will start building the nextflow pipeline**<br>
+
 To already try to adhere to the nf-core best practice guidelines, I installed nf-core on my laptop and used the template to initiate my nextflow project locally, which also initiates git. 
 ```
 nf-core pipelines create
 ```
-I navigate into the project folder ont-preprocessing and inspect it. Many files that seem a bit too complicated for now, but will try to use the framework as much as possible.
+I navigate into the project folder ont-preprocessing and inspect it. Many files that seem a bit too complicated for now, but will try to use the framework as much as possible.<br>
 
-**STEP 2: Link pipeline to remote GitHub repository**
-On GitHub profile, i made a new github repository [leenaput/nextflow-microcredential](https://github.com/leenput/microcredential-nextflow-project/tree/main)
+**STEP 2: Link pipeline to remote GitHub repository**<br>
+
+On GitHub profile, i made a new github repository [leenaput/nextflow-microcredential](https://github.com/leenput/microcredential-nextflow-project/tree/main)<br>
+
 On my local system, I linked the local git project to this repository:
 ```
 git@github.com:leenput/microcredential-nextflow-project.git
@@ -55,12 +59,13 @@ git push --all origin
 ```
 
 ## PREPARE INPUT TEST DATA
-Create directory to store input fastq data in
+
+Create directory to store input fastq data in:
 ```
 mkdir data
 ```
-Copy chromosome of T2T reference genome (T2T-CHM13v2) fasta file (Chr21) and fastq test data here.
-(Ideally reference genome retrieved using the igenome config and getGenomeAttributes subworkflow supplied by nf-core template.)
+Copy chromosome of T2T reference genome (T2T-CHM13v2) fasta file (Chr21) and fastq test data here.<br>
+(Ideally reference genome retrieved using the igenome config and getGenomeAttributes subworkflow supplied by nf-core template.)<br>
 
 ## CREATE MODULES
 first create a modules directory
@@ -69,22 +74,22 @@ mkdir modules
 ```
 
 ### 1. QC module - nanoplot
-Find appropriate **conda enviroments/containers**.
+Find appropriate **conda enviroments/containers**.<br>
 - conda: https://anaconda.org/bioconda/nanoplot=1.44.1
-- container: quay.io/biocontainers/nanoplot:1.44.1--pyhdfd78af_0  
+- container: quay.io/biocontainers/nanoplot:1.44.1--pyhdfd78af_0  <br>
 
 **Define inputs**: the tool takes raw/filtered fastq or ubam files (with --fastq flag) or sorted and mapped bam files (with --bam). 
 Therefore, we need to define two seperate processes, one for read QC and one for mapping QC. 
-In main.nf we need to include the nanoplot.nf module for NANOPLOT_RAW process as QC_RAW, QC_FILT to use it twice, and the NANOPLOT_BAM for read alignment QC   
+In main.nf we need to include the nanoplot.nf module for NANOPLOT_RAW process as QC_RAW, QC_FILT to use it twice, and the NANOPLOT_BAM for read alignment QC<br>   
 
-As module input: tuple of sample name and reads and a step value
+As module input: tuple of sample name and reads and a step value<br>
 -> match this in main.nf by defining appropriate channel that is shaped like a tuple with three elements (sample, reads-filepath, step)
 -> we can use the *map operator* for this
 
-**Define outputs**: the tool generates a bunch of different file formats (html, png, txt, log), so we should specify and emit them in the output section.   
+**Define outputs**: the tool generates a bunch of different file formats (html, png, txt, log), so we should specify and emit them in the output section.<br>   
 
 ### 2. read processing module - chopper
-Find appropriate **conda enviroments/containers**.
+Find appropriate **conda enviroments/containers**.<br>
 - conda: https://anaconda.org/bioconda/chopper=0.10.0
 - container: quai.io biocontainers: quay.io/biocontainers/chopper:0.10.0--hcdda2d0_0  
 
@@ -93,42 +98,42 @@ As module input: tuple of sample name and reads, qscore value and length value
 --> match in main.nf by setting up value channels for qscore and length 
 --> feed chopper module with reads channel, qscore and length value channels
 
-**Define outputs**: The tool outputs a filtered fastq file, which we will emit, to then use as input for post-processing QC step and for alignment.  
+**Define outputs**: The tool outputs a filtered fastq file, which we will emit, to then use as input for post-processing QC step and for alignment.  <br>
 
 ### 3. alignment module - minimap2
-Find appropriate **conda enviroments/containers**.
+Find appropriate **conda enviroments/containers**.<br>
 - conda: https://anaconda.org/bioconda/minimap2=2.29
 - container: quay.io/biocontainers/minimap2:2.29--h577a1d6_0  
 
-**Define inputs**: Minimap2 requires the filtered fastq reads and fasta reference as input files.
+**Define inputs**: Minimap2 requires the filtered fastq reads and fasta reference as input files.<br>
 - set up value channel (fromPath) for fasta reference file in main.nf
 - module input is tuple of sample and filtered reads, and path to fasta file.  
 
-**Define outputs**: alignment file in SAM format. 
+**Define outputs**: alignment file in SAM format. <br>
 - Specify in samtools module output as tuple of sample and SAM file path.
-- Connect in main.nf with chopper fastq output. 
+- Connect in main.nf with chopper fastq output. <br>
 
 ### 3a. alignment processing module - samtools
-Find appropriate **conda enviroments/containers**.
+Find appropriate **conda enviroments/containers**.<br>
 - conda: https://anaconda.org/bioconda/samtools=1.21
 - container: quay.io/biocontainers/samtools:1.21--h96c455f_1  
 
-**Define inputs**: we will use different function of samtools convert (samtools view), sort (samtools sort) and index (samtools index) the SAM aligment file. 
+**Define inputs**: we will use different function of samtools convert (samtools view), sort (samtools sort) and index (samtools index) the SAM aligment file. <br>
 - module input is tuple of sample and path to SAM file.
 - use module script section to pipe the different functions for efficiency.   
 
-**Define output**: two outputs: sorted bam file and index
+**Define output**: two outputs: sorted bam file and index<br>
 So module output is tuple of sample and the sorted BAM, which we will emit as 'bam'. Another output is the index (.bai) file, which we will not emit because not explicitely needed to call upon it in remainder of pipeline.  
 
-**Modify main.nf**: Include samtools.nf module and connect emitted minimap2 output as process input.
+**Modify main.nf**: Include samtools.nf module and connect emitted minimap2 output as process input.<br>
 
 ### 3b. alignment evaluation 
-Using samtools depth, calculate per-position coverage. For this, we create a COVERAGE process in the samtools module file, that uses the sorted bam file as an input and generates a coverage.txt file. We also use Nanoplot again to calculate metrics of aligned reads.
+Using samtools depth, calculate per-position coverage. For this, we create a COVERAGE process in the samtools module file, that uses the sorted bam file as an input and generates a coverage.txt file. We also use Nanoplot again to calculate metrics of aligned reads.<br>
 --> include COVERAGE process from samtools module and NANOPLOT_BAM process from nanoplot module in main.nf
---> call upon the processes and connect data channels
+--> call upon the processes and connect data channels<br>
 
 ### 4. final QC evaluation - custom script
-This module will contain a bash script that will parse the output files generated by nanoplot and samtools depth to evaluate if the sample is suitable for downstream analyses (FAIL/PASS).
+This module will contain a bash script that will parse the output files generated by nanoplot and samtools depth to evaluate if the sample is suitable for downstream analyses (FAIL/PASS).<br>
 - input: NanoStat.txt files of raw, filtered and mapped reads, .coverage.txt file, parameter thresholds:
     - RAW_FILE=$1
     - FILT_FILE=$2
@@ -141,8 +146,7 @@ This module will contain a bash script that will parse the output files generate
     - THRESH_COV=$9
     - THRESH_N50=${10}
 
-
-- output: qc_summary.txt file 
+- output: qc_summary.txt file <br>
 
 This script should be stored in bin/ directory in order to be automatically accessable to Nextflow. 
 
@@ -154,7 +158,7 @@ touch bin/qc_evaluation.sh
 - make a new module for this process/script: qc_summary.nf
 - include ubuntu as container image and conda env (recycled from samtools env)
 - define all input channels, modify the nanopstat.txt output tuples to just represent the file using map operator
-- include thresholds in params.config 
+- include thresholds in params.config <br>
 
 Finally, use operators (.map, .last, .collect and .view) to quickly inspect the QC evaluation summary table and print PASS / FAIL in stdout.
 
