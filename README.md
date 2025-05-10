@@ -2,8 +2,8 @@
 
 ## Introduction
 
-**leenaput/microcredential-nextflow-project** 
-For the Microcredential Nextflow project, I developed a pipeline to processes nanopore sequencing data from raw FASTQ to alignment, coverage calculation, and QC summary evaluation. 
+**leenaput/microcredential-nextflow-project**\n
+For the Microcredential Nextflow project, I developed a pipeline to processes nanopore sequencing data from raw FASTQ to alignment, coverage calculation, and QC summary evaluation. A step-by-step outline of how the project was developed can be found [here](https://github.com/leenput/microcredential-nextflow-project/blob/main/STEPBYSTEP.md).\n
 
 
 ## Pipeline overview
@@ -18,16 +18,40 @@ For the Microcredential Nextflow project, I developed a pipeline to processes na
 5. **Final report** – Quickly displays QC pass/fail per sample 
 
 
-## Usage
-# Set parameters 
-### Required
+# Usage
+## Installation
+Clone the repository:
+```
+git clone git@github.com:leenput/microcredential-nextflow-project.git
+```
 
-| Parameter       | Description                          | Example                                  |
+Note: Nextflow should be installed on your system.\n
+If working on VSC, make sure to carry out the following configurations before running the pipeline:
+```
+module load Nextflow/24.10.2
+export APPTAINER_CACHEDIR=${VSC_SCRATCH}/.apptainer_cache
+export APPTAINER_TMPDIR=${VSC_SCRATCH}/.apptainer_tmp
+``` 
+
+## Set parameters
+The parameters are included in params.config. Please modify according to your experimental needs. 
+
+### General parameters
+
+| Parameter      | Description                          | Example                                  |
 |----------------|--------------------------------------|------------------------------------------|
 | `--reads`      | Path to input FASTQ files            | `./data/*.fastq`                         |
-| `--fasta`      | Reference genome FASTA file          | `./ref/genome.fa`                        |
+| `--fasta`      | Reference genome FASTA file          | `./data/genome.fasta`                    |\n
 
-### Optional
+
+Please make sure to store your genome sequence file (*.fasta*) and basecalled ONT reads (*.fastq*) in the /data workfolder.\n
+
+For now, you can find the following **test data** there:\n
+- reference sequence: chr21 of the new human reference genome T2T-CHM13v2 
+- ONT data: subsampled reads of GIAB sample HG002 
+
+
+### Optional parameters
 
 | Parameter         | Description                             | Default  |
 |------------------|-----------------------------------------|----------|
@@ -39,13 +63,16 @@ For the Microcredential Nextflow project, I developed a pipeline to processes na
 | `--filt_n50`     | Minimum N50 for filtered reads          | `5000`   |
 
 
-# Run the pipeline
-```bash
-nextflow run leenaput/microcredential-nextflow-project \
-   -profile <docker/singularity/conda \
+## Run the pipeline
+
+Run the workflow with the following command:
+
+```
+nextflow run main.nf -profile <docker/singularity/conda> \
 ```
 
-# Output structure
+## Output structure
+```
 results/
     ├── pipeline_info/
     ├── <sample>/
@@ -56,4 +83,5 @@ results/
                      ├── filtered/
                      ├── mapped/
                      ├── <sample>_QC_summary.txt
-      
+                     
+```    
